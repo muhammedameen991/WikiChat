@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="WikiChat — a modern conversational interface for searching Wikipedia.">
+<meta name="theme-color" content="#0b1020">
+<meta property="og:title" content="WikiChat — Search Wikipedia Naturally">
+<meta property="og:description" content="Search and explore Wikipedia through a modern conversational interface.">
+<title>WikiChat — Search Wikipedia Naturally</title>
+<style>
+:root{
+  --bg:#080b14;--panel:#0f1422;--panel2:#151b2b;--text:#f4f7ff;--muted:#9aa5bd;
+  --line:rgba(255,255,255,.09);--accent:#6d7cff;--accent2:#8d5cff;--danger:#ff6577;
+  --shadow:0 20px 70px rgba(0,0,0,.35);--radius:20px;
+}
+[data-theme="light"]{
+  --bg:#f5f7fb;--panel:#fff;--panel2:#eef1f7;--text:#111827;--muted:#667085;
+  --line:rgba(17,24,39,.1);--shadow:0 20px 60px rgba(20,30,60,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:285px;border-right:1px solid var(--line);background:color-mix(in srgb,var(--panel) 92%,transparent);padding:18px;display:flex;flex-direction:column;gap:14px;position:fixed;inset:0 auto 0 0;z-index:20}
+.brand{display:flex;align-items:center;gap:11px;padding:8px 5px 16px}
+.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-weight:900;box-shadow:0 10px 30px rgba(109,124,255,.3)}
+.brand strong{font-size:18px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.newchat{border:1px solid var(--line);background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;border-radius:13px;padding:12px;font-weight:700}
+.side-title{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin:8px 4px 0}
+.history{overflow:auto;flex:1}
+.history-item{width:100%;text-align:left;background:transparent;border:0;color:var(--text);padding:10px;border-radius:10px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item:hover{background:var(--panel2)}
+.side-bottom{display:grid;gap:7px}
+.side-btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;border-radius:11px;text-align:left}
+.main{margin-left:285px;width:calc(100% - 285px);min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(18px);z-index:10}
+.top-left{display:flex;align-items:center;gap:10px}.top-title{font-weight:800}.source{font-size:11px;color:var(--muted);padding:5px 8px;border:1px solid var(--line);border-radius:999px}
+.top-actions{display:flex;gap:7px}.icon-btn{border:1px solid var(--line);background:var(--panel);color:var(--text);width:38px;height:38px;border-radius:11px}
+.chat{width:min(900px,calc(100% - 36px));margin:0 auto;flex:1;padding:50px 0 160px}
+.welcome{text-align:center;padding:70px 10px 30px}.welcome .biglogo{width:68px;height:68px;border-radius:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:28px;font-weight:900;margin:0 auto 20px;box-shadow:0 20px 60px rgba(109,124,255,.3)}
+.welcome h1{font-size:clamp(28px,5vw,48px);margin:0 0 10px;letter-spacing:-.04em}.welcome p{color:var(--muted);margin:0 auto 28px;max-width:620px}
+.suggestions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.suggestion{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:999px}
+.message{display:flex;gap:12px;margin:25px 0}.avatar{width:34px;height:34px;min-width:34px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--panel2);border:1px solid var(--line)}.message.user .avatar{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.bubble{max-width:calc(100% - 48px);line-height:1.65}.user .bubble{background:var(--panel2);border:1px solid var(--line);padding:11px 14px;border-radius:15px}.assistant .bubble{padding-top:3px}
+.result-card{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.result-head{display:flex;gap:18px;padding:18px}.thumb{width:125px;height:100px;object-fit:cover;border-radius:14px;background:var(--panel2)}.result-meta{min-width:0}.result-meta h2{margin:0 0 4px;font-size:22px}.desc{color:var(--muted);font-size:13px;margin-bottom:9px}.extract{color:var(--text);font-size:14px}.actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px 18px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:10px}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.related{padding:17px 18px;border-top:1px solid var(--line)}.related h3{font-size:13px;margin:0 0 11px}.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.related button{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:11px;text-align:left;border-radius:12px}.related small{display:block;color:var(--muted);margin-top:3px}
+.composer-wrap{position:fixed;bottom:0;left:285px;right:0;padding:16px 18px 20px;background:linear-gradient(transparent,var(--bg) 35%);z-index:9}.composer{width:min(900px,100%);margin:auto;display:flex;align-items:flex-end;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:9px;box-shadow:var(--shadow)}textarea{resize:none;border:0;outline:0;background:transparent;color:var(--text);flex:1;max-height:150px;padding:8px 7px}.send{width:42px;height:42px;border:0;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:900}
+.status{text-align:center;color:var(--muted);font-size:12px;margin:10px}
+.skeleton{height:15px;border-radius:8px;background:linear-gradient(90deg,var(--panel2),var(--line),var(--panel2));background-size:200% 100%;animation:load 1.2s infinite}.skel-wrap{display:grid;gap:9px;padding:12px 0}@keyframes load{to{background-position:-200% 0}}
+.reader{width:min(900px,calc(100% - 36px));margin:auto;padding:35px 0 100px}.back{margin-bottom:20px}.reader article{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:clamp(20px,5vw,50px);box-shadow:var(--shadow)}.reader h1{font-size:clamp(30px,5vw,48px);line-height:1.1;margin:0 0 8px}.reader .lead{color:var(--muted);font-size:16px}.reader img{max-width:100%;max-height:360px;object-fit:contain;border-radius:16px;margin:20px 0}.reader .content{line-height:1.8;font-size:16px}.reader .content h2{margin-top:32px;border-bottom:1px solid var(--line);padding-bottom:7px}.reader .content a{color:var(--accent)}.mobile-menu{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:50;padding:18px}.modal.open{display:grid}.modal-box{width:min(600px,100%);max-height:85vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px}.modal-box h2{margin-top:0}.modal-close{float:right}.kbd{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:2px 5px;border-radius:5px}
+@media(max-width:800px){
+  .sidebar{transform:translateX(-100%);transition:.25s;width:285px}.sidebar.open{transform:none;box-shadow:30px 0 70px rgba(0,0,0,.35)}
+  .main{margin-left:0;width:100%}.composer-wrap{left:0}.mobile-menu{display:block}.chat{width:min(900px,calc(100% - 24px));padding-top:25px}.topbar{padding:0 12px}.top-actions .about-btn{display:none}.result-head{flex-direction:column}.thumb{width:100%;height:170px}.welcome{padding-top:45px}
+}
+@media(max-width:500px){.welcome h1{font-size:32px}.bubble{max-width:calc(100% - 45px)}.result-meta h2{font-size:19px}.reader{width:calc(100% - 20px)}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><div class="logo">W</div><div><strong>WikiChat</strong><small>Wikipedia-powered search</small></div></div>
+  <button class="newchat" id="newChat">＋ New chat</button>
+  <div class="side-title">Recent searches</div>
+  <div class="history" id="history"></div>
+  <div class="side-bottom">
+    <button class="side-btn" id="bookmarksBtn">⭐ Saved articles</button>
+    <button class="side-btn" id="clearHistory">🗑 Clear history</button>
+    <button class="side-btn" id="aboutBtn">ⓘ About WikiChat</button>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="top-left">
+      <button class="icon-btn mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
+      <span class="top-title">WikiChat</span>
+      <span class="source">Wikipedia</span>
+    </div>
+    <div class="top-actions">
+      <select class="icon-btn" id="language" aria-label="Wikipedia language" style="width:auto;padding:0 8px">
+        <option value="en">English</option><option value="ml">മലയാളം</option><option value="hi">हिन्दी</option>
+        <option value="ta">தமிழ்</option><option value="bn">বাংলা</option><option value="ar">العربية</option>
+        <option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option>
+      </select>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☀</button>
+      <button class="icon-btn about-btn" id="aboutTop" aria-label="About">?</button>
+    </div>
+  </header>
+
+  <section id="view">
+    <div class="chat" id="chat">
+      <div class="welcome" id="welcome">
+        <div class="biglogo">W</div>
+        <h1>Ask Wikipedia anything.</h1>
+        <p>Search naturally and explore encyclopedia articles in a clean conversational interface.</p>
+        <div class="suggestions">
+          <button class="suggestion" data-query="Tell me about Kerala">🇮🇳 Kerala</button>
+          <button class="suggestion" data-query="Who was Albert Einstein?">🧑 Albert Einstein</button>
+          <button class="suggestion" data-query="What is photosynthesis?">🧬 Photosynthesis</button>
+          <button class="suggestion" data-query="Tell me about the Solar System">🌌 Solar System</button>
+          <button class="suggestion" data-query="Tell me about Malappuram">📍 Malappuram</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="composer-wrap">
+  <form class="composer" id="form">
+    <textarea id="input" rows="1" aria-label="Ask Wikipedia" placeholder="Ask anything about Wikipedia..."></textarea>
+    <button class="send" aria-label="Search">➤</button>
+  </form>
+  <div class="status">Wikipedia-powered • No custom backend • <span class="kbd">Enter</span> to search</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <button class="icon-btn modal-close" id="modalClose">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const $ = s => document.querySelector(s);
+const chat = $("#chat"), input = $("#input"), form = $("#form"), historyEl = $("#history");
+const langEl = $("#language"), sidebar = $("#sidebar"), modal = $("#modal"), modalContent = $("#modalContent");
+const STORE = {history:"wikichat_history_v1", bookmarks:"wikichat_bookmarks_v1", theme:"wikichat_theme_v1", lang:"wikichat_lang_v1"};
+
+const LANGS = {
+  en:"English",ml:"മലയാളം",hi:"हिन्दी",ta:"தமிழ்",bn:"বাংলা",ar:"العربية",es:"Español",fr:"Français",de:"Deutsch"
+};
+
+let currentArticle = null;
+let abortController = null;
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+function wikiBase(){ return `https://${langEl.value}.wikipedia.org`; }
+function apiUrl(params){ return `${wikiBase()}/w/api.php?${new URLSearchParams({...params,origin:"*"})}`; }
+
+function getJSON(key, fallback=[]){
+  try{return JSON.parse(localStorage.getItem(key)) ?? fallback}catch{return fallback}
+}
+function setJSON(key,val){localStorage.setItem(key,JSON.stringify(val))}
+function saveHistory(q,title){
+  let h=getJSON(STORE.history); h=h.filter(x=>x.q!==q); h.unshift({q,title,time:Date.now()}); setJSON(STORE.history,h.slice(0,40)); renderHistory();
+}
+function renderHistory(){
+  const h=getJSON(STORE.history);
+  historyEl.innerHTML = h.length ? h.map(x=>`<button class="history-item" title="${esc(x.q)}" data-history="${encodeURIComponent(x.q)}">${esc(x.title||x.q)}</button>`).join("") : `<div style="color:var(--muted);font-size:13px;padding:10px 4px">No searches yet.</div>`;
+}
+historyEl.addEventListener("click",e=>{const b=e.target.closest("[data-history]");if(b){search(decodeURIComponent(b.dataset.history));sidebar.classList.remove("open")}});
+
+function bookmarks(){return getJSON(STORE.bookmarks)}
+function isSaved(title){return bookmarks().some(x=>x.title===title)}
+function toggleBookmark(article){
+  let b=bookmarks();
+  if(isSaved(article.title)) b=b.filter(x=>x.title!==article.title);
+  else b.unshift({title:article.title,url:article.url,description:article.description||""});
+  setJSON(STORE.bookmarks,b.slice(0,100));
+  renderBookmarksModal();
+  renderCurrentBookmarkButton();
+}
+function renderCurrentBookmarkButton(){
+  const btn=$("#saveBtn"); if(btn) btn.textContent=isSaved(currentArticle?.title)?"★ Saved":"☆ Save";
+}
+
+async function wikiSearch(query, signal){
+  const r=await fetch(apiUrl({action:"query",list:"search",srsearch:query,srlimit:"8",format:"json"}),{signal});
+  if(!r.ok) throw new Error("Wikipedia search failed");
+  return r.json();
+}
+async function getPage(title, signal){
+  const r=await fetch(apiUrl({action:"query",prop:"extracts|pageimages|info|description",exintro:"1",explaintext:"1",piprop:"thumbnail",pithumbsize:"700",inprop:"url",redirects:"1",titles:title,format:"json"}),{signal});
+  if(!r.ok) throw new Error("Wikipedia article failed");
+  const d=await r.json(), pages=d.query.pages, p=Object.values(pages)[0];
+  if(!p || p.missing) return null;
+  return {
+    title:p.title, extract:p.extract||"No summary is available for this article.",
+    description:p.description||"", thumb:p.thumbnail?.source||"",
+    url:p.fullurl||`${wikiBase()}/wiki/${encodeURIComponent(p.title.replaceAll(" ","_"))}`,
+    pageid:p.pageid
+  };
+}
+async function getRelated(title, signal){
+  try{
+    const r=await fetch(apiUrl({action:"query",prop:"links",titles:title,pllimit:"max",plnamespace:"0",format:"json"}),{signal});
+    const d=await r.json(), p=Object.values(d.query.pages)[0];
+    return (p?.links||[]).slice(0,12).map(x=>x.title);
+  }catch{return []}
+}
+async function getFullArticle(title, signal){
+  const r=await fetch(apiUrl({action:"parse",page:title,prop:"text|sections",format:"json"}),{signal});
+  if(!r.ok) throw new Error("Article reader failed");
+  return r.json();
+}
+
+function cleanQuery(q){
+  let s=q.trim().replace(/\s+/g," ");
+  s=s.replace(/^(please\s+)?(tell me|show me|give me|explain|describe)\s+(about|information about|info about)?\s*/i,"");
+  s=s.replace(/^(who\s+(is|was)|what\s+(is|was)|where\s+is|when\s+was)\s+/i,"");
+  s=s.replace(/[?!.]+$/,"").trim();
+  return s || q.trim();
+}
+
+function addUserMessage(q){
+  $("#welcome")?.remove();
+  const el=document.createElement("div"); el.className="message user";
+  el.innerHTML=`<div class="avatar">You</div><div class="bubble">${esc(q)}</div>`;
+  chat.appendChild(el); scrollBottom();
+}
+function addLoading(){
+  const el=document.createElement("div"); el.className="message assistant"; el.id="loading";
+  el.innerHTML=`<div class="avatar">W</div><div class="bubble"><div style="color:var(--muted)">🔎 Searching Wikipedia…</div><div class="skel-wrap"><div class="skeleton" style="width:85%"></div><div class="skeleton" style="width:65%"></div><div class="skeleton" style="width:45%"></div></div></div>`;
+  chat.appendChild(el); scrollBottom();
+}
+function removeLoading(){$("#loading")?.remove()}
+function addAssistantHTML(html){
+  const el=document.createElement("div"); el.className="message assistant";
+  el.innerHTML=`<div class="avatar">W</div><div class="bubble">${html}</div>`;
+  chat.appendChild(el); scrollBottom(); return el;
+}
+function scrollBottom(){requestAnimationFrame(()=>scrollTo({top:document.body.scrollHeight,behavior:"smooth"}))}
+
+function resultHTML(article, related){
+  currentArticle=article;
+  const relatedHTML=related.length?`<div class="related"><h3>Related articles</h3><div class="related-grid">${related.slice(0,8).map(t=>`<button data-related="${encodeURIComponent(t)}"><strong>${esc(t)}</strong><small>Wikipedia article</small></button>`).join("")}</div></div>`:"";
+  return `<div class="result-card">
+    <div class="result-head">
+      ${article.thumb?`<img class="thumb" src="${esc(article.thumb)}" alt="${esc(article.title)}">`:`<div class="thumb" aria-hidden="true"></div>`}
+      <div class="result-meta"><h2>${esc(article.title)}</h2><div class="desc">${esc(article.description||"Wikipedia article")}</div><div class="extract">${esc(article.extract)}</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" data-read="${encodeURIComponent(article.title)}">📖 Read article</button>
+      <a class="btn" href="${esc(article.url)}" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>
+      <button class="btn" id="saveBtn">${isSaved(article.title)?"★ Saved":"☆ Save"}</button>
+      <button class="btn" data-copy>📋 Copy</button>
+      <button class="btn" data-share>↗ Share</button>
+    </div>${relatedHTML}</div>`;
+}
+
+async function search(q){
+  q=q.trim(); if(!q)return;
+  if(abortController) abortController.abort();
+  abortController=new AbortController();
+  addUserMessage(q); addLoading(); input.value=""; input.style.height="auto";
+  try{
+    const cleaned=cleanQuery(q), data=await wikiSearch(cleaned,abortController.signal);
+    if(!data.query.search.length){
+      removeLoading(); addAssistantHTML(`<div style="color:var(--muted)">No Wikipedia article found for <strong>${esc(cleaned)}</strong>.<br>Try a different question or spelling.</div>`); return;
+    }
+    const best=data.query.search[0], article=await getPage(best.title,abortController.signal);
+    if(!article){removeLoading(); addAssistantHTML("No readable article was found. Try another search.");return}
+    const related=await getRelated(article.title,abortController.signal);
+    removeLoading(); saveHistory(q,article.title); addAssistantHTML(resultHTML(article,related));
+  }catch(err){
+    if(err.name==="AbortError")return;
+    removeLoading(); addAssistantHTML(`<div style="color:var(--danger)">Couldn't reach Wikipedia right now.<br><small>Check your internet connection and try again.</small></div><br><button class="btn" data-retry="${encodeURIComponent(q)}">Retry</button>`);
+  }
+}
+
+chat.addEventListener("click",async e=>{
+  const rel=e.target.closest("[data-related]"); if(rel){search(decodeURIComponent(rel.dataset.related));return}
+  const read=e.target.closest("[data-read]"); if(read){openReader(decodeURIComponent(read.dataset.read));return}
+  const copy=e.target.closest("[data-copy]"); if(copy){
+    const card=copy.closest(".result-card"), text=card.querySelector(".result-meta")?.innerText||"";
+    await navigator.clipboard?.writeText(text); copy.textContent="✓ Copied"; setTimeout(()=>copy.textContent="📋 Copy",1200); return;
+  }
+  const save=e.target.closest("#saveBtn"); if(save){toggleBookmark(currentArticle);return}
+  const share=e.target.closest("[data-share]"); if(share){
+    const u=new URL(location.href); u.searchParams.set("q",currentArticle.title);
+    try{await navigator.clipboard.writeText(u.href);share.textContent="✓ Link copied";setTimeout(()=>share.textContent="↗ Share",1200)}catch{prompt("Copy this link:",u.href)}
+  }
+  const retry=e.target.closest("[data-retry]"); if(retry)search(decodeURIComponent(retry.dataset.retry));
+});
+
+async function openReader(title){
+  modal.classList.remove("open");
+  document.querySelector(".composer-wrap").style.display="none";
+  $("#view").innerHTML=`<div class="reader"><button class="btn back" id="backChat">← Back to chat</button><div class="skel-wrap"><div class="skeleton" style="height:42px;width:65%"></div><div class="skeleton" style="height:220px"></div><div class="skeleton" style="height:14px"></div><div class="skeleton" style="height:14px;width:80%"></div></div></div>`;
+  try{
+    const d=await getFullArticle(title);
+    const p=d.parse;
+    if(!p)throw new Error();
+    const html=p.text["*"];
+    $("#view").innerHTML=`<div class="reader"><button class="btn back" id="backChat">← Back to chat</button><article><h1>${esc(p.title)}</h1><div class="lead">From ${LANGS[langEl.value]||"Wikipedia"} Wikipedia</div><div class="content">${html}</div><div style="margin-top:30px"><a class="btn" href="${wikiBase()}/wiki/${encodeURIComponent(p.title.replaceAll(" ","_"))}" target="_blank" rel="noopener">Open full Wikipedia page ↗</a></div></article></div>`;
+  }catch{ $("#view").innerHTML=`<div class="reader"><button class="btn back" id="backChat">← Back to chat</button><article><h1>Couldn't open article</h1><p>Wikipedia did not return the full article. You can open it directly instead.</p><a class="btn primary" href="${wikiBase()}/wiki/${encodeURIComponent(title.replaceAll(" ","_"))}" target="_blank" rel="noopener">Open Wikipedia ↗</a></article></div>`}
+  $("#backChat").onclick=()=>{location.reload()};
+  scrollTo({top:0,behavior:"smooth"});
+}
+
+function renderBookmarksModal(){
+  const b=bookmarks();
+  modalContent.innerHTML=`<h2>⭐ Saved articles</h2>${b.length?b.map(x=>`<div style="padding:12px 0;border-bottom:1px solid var(--line)"><strong>${esc(x.title)}</strong><div style="color:var(--muted);font-size:12px;margin:4px 0 9px">${esc(x.description)}</div><button class="btn" data-open-bookmark="${encodeURIComponent(x.title)}">Open</button><button class="btn" data-remove-bookmark="${encodeURIComponent(x.title)}">Remove</button></div>`).join(""):`<p style="color:var(--muted)">No saved articles yet.</p>`}`;
+  modal.classList.add("open");
+}
+modalContent.addEventListener("click",e=>{
+  const o=e.target.closest("[data-open-bookmark]");if(o){modal.classList.remove("open");search(decodeURIComponent(o.dataset.openBookmark))}
+  const r=e.target.closest("[data-remove-bookmark]");if(r){setJSON(STORE.bookmarks,bookmarks().filter(x=>x.title!==decodeURIComponent(r.dataset.removeBookmark)));renderBookmarksModal()}
+});
+
+function openAbout(){
+  modalContent.innerHTML=`<h2>WikiChat</h2><p>A frontend-only conversational interface for exploring Wikipedia.</p><p><strong>How it works:</strong> your browser searches Wikipedia's public API and displays the returned article information. Search history and saved articles stay in your browser using LocalStorage.</p><p>WikiChat is not an AI model and does not pretend Wikipedia results were generated by AI.</p><p style="color:var(--muted);font-size:13px">No custom backend • Vanilla JavaScript • Wikipedia API</p>`;
+  modal.classList.add("open");
+}
+
+form.addEventListener("submit",e=>{e.preventDefault();search(input.value)});
+input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
+input.addEventListener("input",()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,150)+"px"});
+document.querySelectorAll(".suggestion").forEach(b=>b.onclick=()=>search(b.dataset.query));
+$("#newChat").onclick=()=>location.href=location.pathname;
+$("#clearHistory").onclick=()=>{localStorage.removeItem(STORE.history);renderHistory()};
+$("#bookmarksBtn").onclick=renderBookmarksModal;
+$("#aboutBtn").onclick=openAbout;$("#aboutTop").onclick=openAbout;
+$("#modalClose").onclick=()=>modal.classList.remove("open");modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open")};
+$("#menuBtn").onclick=()=>sidebar.classList.toggle("open");
+
+function applyTheme(t){document.documentElement.dataset.theme=t;$("#themeBtn").textContent=t==="light"?"☾":"☀"}
+let theme=localStorage.getItem(STORE.theme)||"dark";applyTheme(theme);
+$("#themeBtn").onclick=()=>{theme=document.documentElement.dataset.theme==="light"?"dark":"light";localStorage.setItem(STORE.theme,theme);applyTheme(theme)};
+langEl.value=localStorage.getItem(STORE.lang)||"en";
+langEl.onchange=()=>{localStorage.setItem(STORE.lang,langEl.value); if(input.value) input.placeholder=`Ask Wikipedia in ${LANGS[langEl.value]}...`};
+
+renderHistory();
+
+const initialQ=new URLSearchParams(location.search).get("q");
+if(initialQ) setTimeout(()=>search(initialQ),250);
+
+// Simple client-side suggestions dropdown using Wikipedia search API.
+let suggestTimer;
+const suggestBox=document.createElement("div");
+suggestBox.style.cssText="position:fixed;display:none;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden";
+document.body.appendChild(suggestBox);
+input.addEventListener("input",()=>{
+  clearTimeout(suggestTimer); const q=input.value.trim();
+  if(q.length<2){suggestBox.style.display="none";return}
+  suggestTimer=setTimeout(async()=>{
+    try{
+      const d=await wikiSearch(cleanQuery(q),new AbortController().signal);
+      const items=d.query.search.slice(0,5);
+      if(!items.length){suggestBox.style.display="none";return}
+      const r=input.getBoundingClientRect(); suggestBox.style.left=r.left+"px";suggestBox.style.width=r.width+"px";suggestBox.style.bottom=(innerHeight-r.top+8)+"px";
+      suggestBox.innerHTML=items.map(x=>`<button data-suggest="${encodeURIComponent(x.title)}" style="display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);padding:11px;text-align:left">${esc(x.title)}</button>`).join("");
+      suggestBox.style.display="block";
+    }catch{}
+  },350);
+});
+suggestBox.addEventListener("click",e=>{const b=e.target.closest("[data-suggest]");if(b){suggestBox.style.display="none";search(decodeURIComponent(b.dataset.suggest))}});
+document.addEventListener("click",e=>{if(!e.target.closest(".composer")&&!e.target.closest("#"+suggestBox.id))suggestBox.style.display="none"});
+</script>
+</body>
+</html>
