@@ -1978,6 +1978,7 @@ const LANGS = {
 };
 
 let currentArticle = null;
+const articleCache = new Map();
 let abortController = null;
 let suggestTimer = null;
 
@@ -2181,25 +2182,21 @@ function toggleBookmark(article){
     saved.slice(0,100)
   );
 
-  renderBookmarksModal();
-  renderCurrentBookmarkButton();
+  if(document.querySelector("#modal")?.classList.contains("open")){
+    renderBookmarksModal();
+  }
+  renderCurrentBookmarkButton(article.title);
 
 }
 
-function renderCurrentBookmarkButton(){
-
-  const button =
-    $("#saveBtn");
-
-  if(!button)return;
-
-  button.textContent =
-    isSaved(
-      currentArticle?.title
-    )
-    ? "★ Saved"
-    : "☆ Save";
-
+function renderCurrentBookmarkButton(title = currentArticle?.title){
+  if(!title)return;
+  document.querySelectorAll(".save-btn").forEach(button => {
+    const buttonTitle = decodeURIComponent(button.dataset.save || "");
+    if(buttonTitle === title){
+      button.textContent = isSaved(title) ? "★ Saved" : "☆ Save";
+    }
+  });
 }
 
 /* =========================================================
@@ -2571,8 +2568,8 @@ function resultHTML(
   related
 ){
 
-  currentArticle =
-    article;
+  currentArticle = article;
+  articleCache.set(article.title, article);
 
   const relatedHTML =
     related.length
@@ -2600,7 +2597,7 @@ function resultHTML(
                   </small>
 
                 </button>
-              ])
+              `)
               .join("")}
 
           </div>
@@ -2611,7 +2608,7 @@ function resultHTML(
 
   return `
 
-    <div class="result-card">
+    <div class="result-card" data-article-title="${encodeURIComponent(article.title)}">
 
       <div class="result-head">
 
@@ -2667,8 +2664,8 @@ function resultHTML(
         </a>
 
         <button
-          class="btn"
-          id="saveBtn">
+          class="btn save-btn"
+          data-save="${encodeURIComponent(article.title)}">
           ${isSaved(article.title)
             ? "★ Saved"
             : "☆ Save"}
@@ -2682,7 +2679,7 @@ function resultHTML(
 
         <button
           class="btn"
-          data-share>
+          data-share="${encodeURIComponent(article.title)}">
           ↗ Share
         </button>
 
@@ -2739,7 +2736,7 @@ async function search(query){
         abortController.signal
       );
 
-    if(!data.query.search.length){
+    if(!data?.query?.search?.length){
 
       removeLoading();
 
@@ -2926,14 +2923,22 @@ chat.addEventListener(
 
     const save =
       event.target.closest(
-        "#saveBtn"
+        "[data-save]"
       );
 
     if(save){
-
-      toggleBookmark(
-        currentArticle
+      const title = decodeURIComponent(
+        save.dataset.save || ""
       );
+      const article = articleCache.get(title);
+
+      if(article){
+        toggleBookmark(article);
+        save.textContent =
+          isSaved(title)
+            ? "★ Saved"
+            : "☆ Save";
+      }
 
       return;
     }
@@ -2950,9 +2955,16 @@ chat.addEventListener(
           location.href
         );
 
+      const card = share.closest(".result-card");
+      const title = decodeURIComponent(
+        share.dataset.share || card?.dataset.articleTitle || ""
+      );
+      const article = articleCache.get(title);
+      if(!article)return;
+
       url.searchParams.set(
         "q",
-        currentArticle.title
+        article.title
       );
 
       try{
@@ -3556,6 +3568,9 @@ langEl.value =
   localStorage.getItem(
     STORE.lang
   ) || "en";
+
+input.placeholder =
+  `Search Wikipedia in ${LANGS[langEl.value] || "English"}...`;
 
 langEl.onchange =
   () => {
